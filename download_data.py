@@ -48,17 +48,16 @@ def main():
 
     # 3) Скачиваем по одному, если нет на диске
     for local_name, file_id in files.items():
-        if not os.path.exists(local_name):
-            download_file(drive, file_id, local_name)
-        else:
-            print(f"ℹ️  {local_name} уже существует, пропускаем.")
+        if os.path.exists(local_name):
+            os.remove(local_name)
+            print(f"🗑️  Removed old {local_name}")
+        download_file(drive, file_id, local_name)
 
     print("🎉 Все файлы загружены!")
-    print("IM HERE #0")
+
 
 if __name__ == '__main__':
     # Проверим, что переменная окружения задана
     if 'GOOGLE_SERVICE_ACCOUNT_JSON' not in os.environ:
         raise RuntimeError("Не найдена переменная GOOGLE_SERVICE_ACCOUNT_JSON")
-    print("IM HERE #1")
     main()
