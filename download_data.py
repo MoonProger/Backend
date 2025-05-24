@@ -40,10 +40,10 @@ def main():
         'ratings.csv':               '1_Nwrnq3UuIwlQnay-pWrzRql7glHVsCp',
         'fasttext_tfidf_cosine.pkl': '1zpE7LH9jpUy7C8CuckIJECxwqqk0IXT9',
         # если есть ещё файлы, добавьте их сюда:
-        # 'clusters_movies_with_tags.csv': 'ВАШ_FILE_ID',
-        # 'movie_cache.json': 'ВАШ_FILE_ID',
-        # 'recommendations.csv': 'ВАШ_FILE_ID',
-        # 'similar_movies_cache.json': 'ВАШ_FILE_ID',
+        'clusters_movies_with_tags.csv': '1pWBK57DsDHK1eskGP7Sn6tMaUjtUIWlB',
+        'movie_cache.json': '1oXzttp3KLszbA7Y5ganda4Xh2eKfolY5',
+        'recommendations.csv': '10AcCRQY3bodl0wwJJmPWJTSakRQH6rnY',
+        'similar_movies_cache.json': '1rNArkV1xoOsuPNAxxs1j20VHEo6Z_BxR',
     }
 
     # 3) Скачиваем по одному, если нет на диске

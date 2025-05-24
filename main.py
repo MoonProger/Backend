@@ -47,6 +47,7 @@ print("IM HERE #5")
 recommendations = pd.read_csv("recommendations.csv")
 print("IM HERE #6")
 movies.set_index("movieId", inplace=True)
+print("IM HERE #7")
 
 #для работы с API базы с фильмами
 TMBD_API_KEY = "1482dc40dbcb47d03352529127eab8a1"
