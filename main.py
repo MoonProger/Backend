@@ -30,9 +30,12 @@ ratings = None
 @app.on_event("startup")
 def load_data():
     global ratings
-    print("IM HERE #3")
     # Здесь уже читаем локальные файлы, которые скачал download_data.py
-    ratings = pd.read_csv("ratings.csv")
+    print("IM HERE #3: loading ratings.pkl…")
+    ratings = joblib.load("ratings.pkl")  # заметно быстрее, чем CSV
+    print("📥 ratings loaded, shape:", ratings.shape)
+
+    # ratings = pd.read_csv("ratings.csv")
     # with open("fasttext_tfidf_cosine.pkl", "rb") as f:
     #     model = pickle.load(f)
 
