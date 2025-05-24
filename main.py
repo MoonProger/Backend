@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # import requests
 # import urllib.parse
 # import re
-# import json
+import json
 from pathlib import Path
 # import joblib
 # from sklearn.metrics.pairwise import cosine_similarity
