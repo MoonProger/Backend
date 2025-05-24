@@ -26,6 +26,8 @@ app.add_middleware(
 
 print("IM HERE #2")
 ratings = None
+movies = None
+recommendations = None
 
 @app.on_event("startup")
 def load_data():
