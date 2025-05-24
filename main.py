@@ -43,7 +43,9 @@ def health():
 
 print("IM HERE #4")
 movies = pd.read_csv("clusters_movies_with_tags.csv")
+print("IM HERE #5")
 recommendations = pd.read_csv("recommendations.csv")
+print("IM HERE #6")
 movies.set_index("movieId", inplace=True)
 
 #для работы с API базы с фильмами
