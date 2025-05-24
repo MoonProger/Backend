@@ -1,20 +1,24 @@
 import json
-from fastapi import FastAPI
-import pandas as pd
-import joblib
-from fastapi.middleware.cors import CORSMiddleware
-
-import requests
-import urllib.parse
-import re
-
 from pathlib import Path
+from typing import List, Optional
+
+
+# from fastapi import FastAPI
+# import pandas as pd
+# import joblib
+# from fastapi.middleware.cors import CORSMiddleware
+#
+# import requests
+# import urllib.parse
+# import re
+
+
 # from sklearn.metrics.pairwise import cosine_similarity
 # import numpy as np
 # from fastapi.middleware.cors import CORSMiddleware
-# from googletrans import Translator
-# from fastapi import Query
-# from typing import List, Optional
+from googletrans import Translator
+from fastapi import Query
+
 # uvicorn main:app --reload --log-level debug
 #lol
 
