@@ -1,13 +1,14 @@
+import json
 from fastapi import FastAPI
 import pandas as pd
 import joblib
 from fastapi.middleware.cors import CORSMiddleware
-# import requests
-# import urllib.parse
-# import re
-import json
+
+import requests
+import urllib.parse
+import re
+
 from pathlib import Path
-# import joblib
 # from sklearn.metrics.pairwise import cosine_similarity
 # import numpy as np
 # from fastapi.middleware.cors import CORSMiddleware
