@@ -30,14 +30,16 @@ ratings = None
 @app.on_event("startup")
 def load_data():
     global ratings
-    # Здесь уже читаем локальные файлы, которые скачал download_data.py
+    print("🟡 START LOAD_DATA")
     try:
         print("📥 Загружаем ratings.pkl")
         ratings = joblib.load("ratings.pkl")
-        print("✅ ratings загружен:", type(ratings), ratings.shape if hasattr(ratings, "shape") else "")
+        print("✅ Успешно загружено:", type(ratings))
+        if hasattr(ratings, "shape"):
+            print("🧮 Размерность:", ratings.shape)
     except Exception as e:
-        print("🔥 Ошибка при загрузке ratings.pkl:", repr(e))
-        raise
+        print("🔥 ОШИБКА ПРИ ЗАГРУЗКЕ RATINGS:", repr(e))
+        raise e
 @app.get("/health")
 def health():
     return {"status":"ok"}
