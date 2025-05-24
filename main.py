@@ -31,15 +31,13 @@ ratings = None
 def load_data():
     global ratings
     # Здесь уже читаем локальные файлы, которые скачал download_data.py
-    print("IM HERE #3: loading ratings.pkl…")
-    ratings = joblib.load("ratings.pkl")  # заметно быстрее, чем CSV
-    print("📥 ratings loaded, shape:", ratings.shape)
-
-    # ratings = pd.read_csv("ratings.csv")
-    # with open("fasttext_tfidf_cosine.pkl", "rb") as f:
-    #     model = pickle.load(f)
-
-    print("📥 Data loaded into memory")
+    try:
+        print("📥 Загружаем ratings.pkl")
+        ratings = joblib.load("ratings.pkl")
+        print("✅ ratings загружен:", type(ratings), ratings.shape if hasattr(ratings, "shape") else "")
+    except Exception as e:
+        print("🔥 Ошибка при загрузке ratings.pkl:", repr(e))
+        raise
 @app.get("/health")
 def health():
     return {"status":"ok"}
