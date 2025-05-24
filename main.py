@@ -29,25 +29,29 @@ ratings = None
 
 @app.on_event("startup")
 def load_data():
-    global ratings
+    global ratings, movies, recommendations
     print("🟡 START LOAD_DATA")
     try:
         print("📥 Загружаем ratings.pkl")
         ratings = joblib.load("ratings.pkl")
-        print("✅ Успешно загружено:", type(ratings))
-        if hasattr(ratings, "shape"):
-            print("🧮 Размерность:", ratings.shape)
+        print("✅ ratings.pkl загружен:", type(ratings))
+
+        print("📥 Загружаем clusters_movies_with_tags.csv")
+        movies = pd.read_csv("clusters_movies_with_tags.csv")
+        print("✅ Загружено clusters_movies_with_tags.csv:", movies.shape)
+        movies.set_index("movieId", inplace=True)
+
+        print("📥 Загружаем recommendations.csv")
+        recommendations = pd.read_csv("recommendations.csv")
+        print("✅ Загружено recommendations.csv:", recommendations.shape)
+
     except Exception as e:
-        print("🔥 ОШИБКА ПРИ ЗАГРУЗКЕ RATINGS:", repr(e))
+        print("🔥 ОШИБКА В load_data():", repr(e))
         raise e
 @app.get("/health")
 def health():
     return {"status":"ok"}
 
-print("IM HERE #4")
-movies = pd.read_csv("clusters_movies_with_tags.csv")
-print("IM HERE #5")
-recommendations = pd.read_csv("recommendations.csv")
 print("IM HERE #6")
 movies.set_index("movieId", inplace=True)
 print("IM HERE #7")
