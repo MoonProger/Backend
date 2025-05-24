@@ -41,8 +41,8 @@ def download_file(file_id: str, dest: str):
 @app.on_event("startup")
 def load_data():
     files = {
-        'ratings.csv':               'GOOGLE_DRIVE_FILE_ID_1',
-        'fasttext_tfidf_cosine.pkl': 'GOOGLE_DRIVE_FILE_ID_2',
+        'ratings.csv':               '1_Nwrnq3UuIwlQnay-pWrzRql7glHVsCp',
+        'fasttext_tfidf_cosine.pkl': '1zpE7LH9jpUy7C8CuckIJECxwqqk0IXT9',
         # …другие файлы
     }
     for local, fid in files.items():
