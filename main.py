@@ -13,7 +13,7 @@ from googletrans import Translator
 from fastapi import Query
 from typing import List, Optional
 # uvicorn main:app --reload --log-level debug
-
+#lol
 import os, io, pickle
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
