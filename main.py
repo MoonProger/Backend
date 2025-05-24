@@ -23,7 +23,7 @@ app = FastAPI()
 
 # Загружаем JSON-креды из переменной окружения
 import json
-creds_info = json.loads(os.environ['service-account.json'])
+creds_info = json.loads(os.environ['GOOGLE_SERVICE_ACCOUNT_JSON'])
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 creds = service_account.Credentials.from_service_account_info(creds_info, scopes=SCOPES)
 drive = build('drive', 'v3', credentials=creds)
@@ -41,8 +41,8 @@ def download_file(file_id: str, dest: str):
 @app.on_event("startup")
 def load_data():
     files = {
-        'ratings.csv':               '1_Nwrnq3UuIwlQnay-pWrzRql7glHVsCp',
-        'fasttext_tfidf_cosine.pkl': '1zpE7LH9jpUy7C8CuckIJECxwqqk0IXT9',
+        'ratings.csv':               'GOOGLE_DRIVE_FILE_ID_1',
+        'fasttext_tfidf_cosine.pkl': 'GOOGLE_DRIVE_FILE_ID_2',
         # …другие файлы
     }
     for local, fid in files.items():
