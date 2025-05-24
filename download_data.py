@@ -54,9 +54,11 @@ def main():
             print(f"ℹ️  {local_name} уже существует, пропускаем.")
 
     print("🎉 Все файлы загружены!")
+    print("IM HERE #0")
 
 if __name__ == '__main__':
     # Проверим, что переменная окружения задана
     if 'GOOGLE_SERVICE_ACCOUNT_JSON' not in os.environ:
         raise RuntimeError("Не найдена переменная GOOGLE_SERVICE_ACCOUNT_JSON")
+    print("IM HERE #1")
     main()

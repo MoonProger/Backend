@@ -24,12 +24,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+print("IM HERE #2")
 ratings = None
 
 @app.on_event("startup")
 def load_data():
     global ratings
-
+    print("IM HERE #3")
     # Здесь уже читаем локальные файлы, которые скачал download_data.py
     ratings = pd.read_csv("ratings.csv")
     # with open("fasttext_tfidf_cosine.pkl", "rb") as f:
@@ -40,6 +41,7 @@ def load_data():
 def health():
     return {"status":"ok"}
 
+print("IM HERE #4")
 movies = pd.read_csv("clusters_movies_with_tags.csv")
 recommendations = pd.read_csv("recommendations.csv")
 movies.set_index("movieId", inplace=True)
