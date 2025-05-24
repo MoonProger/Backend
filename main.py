@@ -14,58 +14,32 @@ from fastapi import Query
 from typing import List, Optional
 # uvicorn main:app --reload --log-level debug
 #lol
-import os, io, pickle
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
-
 app = FastAPI()
-
-# Загружаем JSON-креды из переменной окружения
-import json
-creds_info = json.loads(os.environ['GOOGLE_SERVICE_ACCOUNT_JSON'])
-SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-creds = service_account.Credentials.from_service_account_info(creds_info, scopes=SCOPES)
-drive = build('drive', 'v3', credentials=creds)
-
-def download_file(file_id: str, dest: str):
-    req = drive.files().get_media(fileId=file_id)
-    fh = io.FileIO(dest, 'wb')
-    dl = MediaIoBaseDownload(fh, req)
-    done = False
-    while not done:
-        status, done = dl.next_chunk()
-        print(f"{dest}: {int(status.progress()*100)}%")
-
-# При старте — скачать всё нужное
-@app.on_event("startup")
-def load_data():
-    files = {
-        'ratings.csv':               '1_Nwrnq3UuIwlQnay-pWrzRql7glHVsCp',
-        'fasttext_tfidf_cosine.pkl': '1zpE7LH9jpUy7C8CuckIJECxwqqk0IXT9',
-        # …другие файлы
-    }
-    for local, fid in files.items():
-        if not os.path.exists(local):
-            download_file(fid, local)
-    # После скачивания можете один раз загрузить в память, если надо:
-    # df_ratings = pd.read_csv('ratings.csv')
-    # with open('fasttext_tfidf_cosine.pkl','rb') as f: model = pickle.load(f)
-
-@app.get("/health")
-def health():
-    return {"status":"ok"}
-
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://tough-seas-jump.loca.lt", "http://localhost:5173", "https://moviemap-inky.vercel.app"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-ratings = pd.read_csv("ratings.csv")
+ratings = None
+
+@app.on_event("startup")
+def load_data():
+    global ratings
+
+    # Здесь уже читаем локальные файлы, которые скачал download_data.py
+    ratings = pd.read_csv("ratings.csv")
+    # with open("fasttext_tfidf_cosine.pkl", "rb") as f:
+    #     model = pickle.load(f)
+
+    print("📥 Data loaded into memory")
+@app.get("/health")
+def health():
+    return {"status":"ok"}
+
 movies = pd.read_csv("clusters_movies_with_tags.csv")
 recommendations = pd.read_csv("recommendations.csv")
 movies.set_index("movieId", inplace=True)
