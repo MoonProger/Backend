@@ -37,7 +37,7 @@ def main():
 
     # 2) Словарь: локальное имя → Google Drive file ID
     files = {
-        'ratings.pkl':               '<1LXcpFzOXzr-5XG24-FLEHUQpZqeEHTEb>',
+        'ratings.pkl':               '1LXcpFzOXzr-5XG24-FLEHUQpZqeEHTEb',
         'fasttext_tfidf_cosine.pkl': '1zpE7LH9jpUy7C8CuckIJECxwqqk0IXT9',
         # если есть ещё файлы, добавьте их сюда:
         'clusters_movies_with_tags.csv': '1pWBK57DsDHK1eskGP7Sn6tMaUjtUIWlB',
