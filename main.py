@@ -1,28 +1,29 @@
 import json
+from io import StringIO
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import FastAPI
 import pandas as pd
 import joblib
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI
+
+import os
+from fastapi.middleware.cors import CORSMiddleware
+import pandas as pd
 
 
-# import requests
-# import urllib.parse
-# import re
-
-
-# from sklearn.metrics.pairwise import cosine_similarity
-# import numpy as np
-# from fastapi.middleware.cors import CORSMiddleware
+import requests
+import urllib.parse
+import re
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 from googletrans import Translator
 from fastapi import Query
+from gdrive_utils import stream_csv_chunks
 
 # uvicorn main:app --reload --log-level debug
 #lol
-
-
 app = FastAPI()
 
 app.add_middleware(
@@ -33,35 +34,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-print("IM HERE #2")
-ratings = None
-movies = None
-recommendations = None
-
-@app.on_event("startup")
-def load_data():
-    global ratings, movies, recommendations
-    print("🟡 START LOAD_DATA")
-    try:
-        print("📥 Загружаем ratings.pkl")
-        ratings = joblib.load("ratings.pkl")
-        print("✅ ratings.pkl загружен:", type(ratings))
-
-        print("📥 Загружаем clusters_movies_with_tags.csv")
-        movies = pd.read_csv("clusters_movies_with_tags.csv")
-        print("✅ Загружено clusters_movies_with_tags.csv:", movies.shape)
-        movies.set_index("movieId", inplace=True)
-
-        print("📥 Загружаем recommendations.csv")
-        recommendations = pd.read_csv("recommendations.csv")
-        print("✅ Загружено recommendations.csv:", recommendations.shape)
-
-    except Exception as e:
-        print("🔥 ОШИБКА В load_data():", repr(e))
-        raise e
-@app.get("/health")
-def health():
-    return {"status":"ok"}
+# Google Drive file IDs
+DRIVE_IDS = {
+    "ratings":         "1zZeyq5rYejOasUdY3GNsAJyHAkqjQ58Q",
+    "recommendations": "10AcCRQY3bodl0wwJJmPWJTSakRQH6rnY",
+    "vectors":         "1Ok0udxVHMZ-xaUCH1qiKm_Vupxyl1Ox3",  # fasttext_tfidf_cosine.csv
+}
 
 #для работы с API базы с фильмами
 TMBD_API_KEY = "1482dc40dbcb47d03352529127eab8a1"
@@ -74,7 +52,7 @@ GENRE_TRANSLATIONS = {
     "Animation": "Анимация",
     "Children": "Детский",
     "Comedy": "Комедия",
-    "Crime": "Криимнал",
+    "Crime": "Криминал",
     "Documentary": "Документальный",
     "Drama": "Драма",
     "Fantasy": "Фэнтези",
@@ -91,6 +69,7 @@ GENRE_TRANSLATIONS = {
     
 }
 
+movies = pd.read_csv("clusters_movies_with_tags.csv").set_index("movieId")
 #кэширование информации о фильмах
 cache_path = Path("movie_cache.json")
 #кэширование похожих фильмов
@@ -231,6 +210,7 @@ def process_movie_info(row, movie_id):
         "poster_url": info["poster_url"]
     }
 
+'''
 #рекомендации на основе оценок пользователя
 @app.get("/recommend/by-ratings/{user_id}")
 def recommend_by_ratings(user_id: int, top_n: int=50):
@@ -267,6 +247,39 @@ def recommend_by_ratings(user_id: int, top_n: int=50):
     return {
         "recommendations": result
     }
+'''
+
+@app.get("/recommend/by-ratings/{user_id}")
+def recommend_by_ratings(user_id: int, top_n: int = Query(50, gt=0)):
+    # Stream ratings.csv
+    chunks = []
+    for ch in stream_csv_chunks(DRIVE_IDS["ratings"], chunksize=200_000):
+        sub = ch[ch.userId == user_id]
+        if not sub.empty:
+            chunks.append(sub)
+    if not chunks:
+        return {"message": "Пользователь не оценивал фильмы"}
+    user_ratings = pd.concat(chunks, ignore_index=True)
+
+    # Merge with movies
+    merged = user_ratings.merge(movies, left_on="movieId", right_index=True, how="inner")
+    cluster_ratings = merged.groupby("cluster")["rating"].mean().reset_index()
+    top_cluster = cluster_ratings.sort_values(by="rating", ascending=False).iloc[0]["cluster"]
+
+    seen = set(user_ratings["movieId"])
+    cluster_movies = movies[movies["cluster"] == top_cluster]
+    recs = cluster_movies[~cluster_movies.index.isin(seen)].copy()
+    recs["average_rating"] = recs["avg_rating"].fillna(0)
+    sorted_recs = recs.sort_values(by="average_rating", ascending=False)
+
+    result = []
+    for mid, row in sorted_recs.iterrows():
+        info = process_movie_info(row, mid)
+        if info:
+            result.append(info)
+            if len(result) == top_n:
+                break
+    return {"recommendations": result}
     
 #карточка фильма
 @app.get("/movie/{movie_id}")
@@ -282,6 +295,44 @@ def get_movie_card(movie_id: int):
         "genres": movie_info["genres_ru"]
     }
 
+@app.get("/recommend/similar-movies/{movie_id}")
+def recommend_similar_movies(movie_id: int, top_n: int = Query(10, gt=0)):
+    if str(movie_id) in similar_cache:
+        indices = similar_cache[str(movie_id)]["indices"][:top_n]
+    else:
+        # Stream vectors.csv
+        vecs = []
+        for ch in stream_csv_chunks(DRIVE_IDS["vectors"], chunksize=50_000):
+            vecs.append(ch)
+        df_vec = pd.concat(vecs, ignore_index=True)
+        df_vec["vector"] = df_vec["vector"].apply(lambda s: np.array(list(map(float, s.split(',')))))
+        df_vec.set_index("movieId", inplace=True)
+
+        if movie_id not in df_vec.index:
+            return {"message": "у фильма нет тэгов, нельзя найти похожие"}
+        mv = df_vec.loc[movie_id, "vector"].reshape(1, -1)
+        all_vec = np.vstack(df_vec["vector"].values)
+        sims = cosine_similarity(mv, all_vec)[0]
+        order = np.argsort(sims)[::-1]
+        indices = []
+        for idx in order:
+            mid = int(df_vec.index[idx])
+            if mid != movie_id:
+                indices.append(mid)
+            if len(indices) >= top_n:
+                break
+        similar_cache[str(movie_id)] = {"indices": indices}
+        save_similar_movies_cache()
+
+    result = []
+    for mid in indices:
+        row = movies.loc[mid] if mid in movies.index else None
+        info = process_movie_info(row, mid) if row is not None else None
+        if info:
+            result.append(info)
+    return {"recommendations": result}
+
+'''
 #похожие фильмы
 @app.get("/recommend/similar-movies/{movie_id}")
 def recommend_similar_movies(movie_id: int, top_n: int = 10):
@@ -329,7 +380,31 @@ def recommend_similar_movies(movie_id: int, top_n: int = 10):
     return {
         "recommendations": result
     }
-    
+'''
+
+@app.get("/recommend/by-similar-ones/{user_id}")
+def recommend_by_similar_ones(user_id: int, top_n: int = Query(50, gt=0)):
+    for ch in stream_csv_chunks(DRIVE_IDS["recommendations"], chunksize=100_000):
+        row = ch[ch.userId == user_id]
+        if not row.empty:
+            rec_ids = row["movieId"].tolist()
+            break
+    else:
+        return {"message": "Рекомендации для пользователя не найдены"}
+
+    rec_movies = movies[movies.index.isin(rec_ids)].copy()
+    sorted_recs = rec_movies.sort_values(by="avg_rating", ascending=False)
+
+    result = []
+    for mid, row in sorted_recs.iterrows():
+        info = process_movie_info(row, mid)
+        if info:
+            result.append(info)
+            if len(result) == top_n:
+                break
+    return {"recommendations": result}
+
+'''
 #популярно у пользователей с похожим вкусом 
 @app.get("/recommend/by-similar-ones/{user_id}")
 def recommend_by_similar_ones(user_id: int, top_n: int = 50):
@@ -353,6 +428,7 @@ def recommend_by_similar_ones(user_id: int, top_n: int = 50):
     return {
         "recommendations": result
     }
+'''
     
 #поиск по всем фильмам
 @app.get("/movies/search")
